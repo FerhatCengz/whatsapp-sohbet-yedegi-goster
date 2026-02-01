@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WhatsApp Chat Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/react-day-picker@8.10.0/dist/style.css">
     <style>
       body {
         font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -30,16 +31,113 @@
       .custom-scrollbar::-webkit-scrollbar-track {
         background: hsla(0, 0%, 100%, 0.1);
       }
+
+      /* --- Modern DayPicker Customization --- */
+      .rdp {
+        --rdp-cell-size: 46px; /* Larger click targets */
+        --rdp-accent-color: #00a884;
+        --rdp-background-color: #e7fce3;
+        --rdp-outline: 2px solid var(--rdp-accent-color);
+        margin: 0;
+      }
+      
+      /* Month/Year Caption */
+      .rdp-caption_label {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #111b21;
+        text-transform: capitalize;
+        padding-left: 0.5rem;
+      }
+
+      /* Navigation Buttons (< >) */
+      .rdp-nav_button {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        color: #54656f;
+        background-color: transparent;
+        transition: background-color 0.2s;
+      }
+      .rdp-nav_button:hover {
+        background-color: #f0f2f5;
+        color: #111b21;
+      }
+
+      /* Day Cells */
+      .rdp-day {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #111b21;
+        border-radius: 50%; /* Circle shape for hover */
+      }
+      
+      /* Selected State (Start & End) */
+      .rdp-day_selected:not([disabled]), 
+      .rdp-day_selected:focus:not([disabled]), 
+      .rdp-day_selected:active:not([disabled]), 
+      .rdp-day_selected:hover:not([disabled]) {
+          background-color: #00a884;
+          color: white;
+          font-weight: 600;
+          box-shadow: 0 4px 6px -1px rgba(0, 168, 132, 0.3);
+      }
+
+      /* Range Middle State */
+      .rdp-day_range_middle {
+          background-color: #e7fce3 !important;
+          color: #111b21 !important;
+          border-radius: 0 !important; /* Connect the strip */
+      }
+      
+      /* Range Start/End Rounded Corners correction */
+      .rdp-day_range_start {
+          border-top-left-radius: 50% !important;
+          border-bottom-left-radius: 50% !important;
+          border-top-right-radius: 0 !important;
+          border-bottom-right-radius: 0 !important;
+      }
+      .rdp-day_range_end {
+          border-top-left-radius: 0 !important;
+          border-bottom-left-radius: 0 !important;
+          border-top-right-radius: 50% !important;
+          border-bottom-right-radius: 50% !important;
+      }
+      /* If start and end are same day */
+      .rdp-day_range_start.rdp-day_range_end {
+          border-radius: 50% !important;
+      }
+
+      /* Today Marker */
+      .rdp-day_today {
+          font-weight: 700;
+          position: relative;
+      }
+      .rdp-day_today:not(.rdp-day_selected)::after {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 4px;
+          height: 4px;
+          background-color: #00a884;
+          border-radius: 50%;
+      }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react": "https://esm.sh/react@18.3.1",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
     "jszip": "https://esm.sh/jszip@3.10.1",
-    "react-virtuoso": "https://esm.sh/react-virtuoso@4.6.2"
+    "react-virtuoso": "https://esm.sh/react-virtuoso@4.7.1?external=react,react-dom",
+    "react-day-picker": "https://esm.sh/react-day-picker@8.10.0?external=react,date-fns",
+    "date-fns": "https://esm.sh/date-fns@3.3.1",
+    "date-fns/": "https://esm.sh/date-fns@3.3.1/"
   }
 }
 </script>
