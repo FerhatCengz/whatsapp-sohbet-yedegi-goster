@@ -1,0 +1,5 @@
+{
+  "name": "WhatsApp Chat Viewer",
+  "description": "A DOM-friendly, high-fidelity WhatsApp chat log viewer with search and Turkish locale support.",
+  "requestFramePermissions": []
+}
