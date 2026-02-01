@@ -1,44 +1,20 @@
-# 📱 WhatsApp Chat Viewer & Parser
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
+# Run and deploy your AI Studio app
 
-**WhatsApp sohbet yedeklerini (.zip veya .txt) saniyeler içinde şık bir arayüzle görüntüleyin.** Export ettiğiniz karmaşık metin dosyalarını, tıpkı telefonunuzdaki gibi okunabilir bir formata dönüştürür.
+This contains everything you need to run your app locally.
 
-[🚀 Canlı Demoyu Görüntüle](BURAYA_GITHUB_PAGES_LINKINI_YAPISTIR)
+View your app in AI Studio: https://ai.studio/apps/drive/1I2WKigttwPsqMjigduK-T4Z7lgmUCqGZ
 
----
+## Run Locally
 
-## ✨ Özellikler / Features
+**Prerequisites:**  Node.js
 
-* **📂 Direkt Dosya Desteği:** `.zip` veya `.txt` dosyalarını sürükle-bırak yöntemiyle yükleyin.
-* **🖼️ Medya Desteği:** Sohbet içindeki fotoğrafları ve videoları görüntüleyin (Zip içindeyse).
-* **📅 Tarih Filtreleme:** Belirli tarihler arasındaki konuşmaları hızlıca bulun.
-* **🔒 Gizlilik Odaklı:** Tüm işlemler tarayıcıda gerçekleşir; verileriniz hiçbir sunucuya yüklenmez.
-* **📱 Mobil Uyumlu:** Responsive tasarım sayesinde telefondan da görüntüleme yapabilirsiniz.
 
----
-
-## 📸 Ekran Görüntüleri / Screenshots
-
-![Uygulama Ekran Görüntüsü](https://via.placeholder.com/800x450.png?text=Projenizden+Bir+Ekran+Goruntusu+Buraya)
-*Uygulamanın arayüzünden bir görseli buraya eklemeyi unutmayın!*
-
----
-
-## 🛠️ Kurulum / Installation
-
-Projeyi yerelinizde çalıştırmak için:
-
-```bash
-# Projeyi klonlayın
-git clone [https://github.com/FerhatCengz/whatsapp-sohbet-goruntuleyici.git](https://github.com/FerhatCengz/whatsapp-sohbet-goruntuleyici.git)
-
-# Klasöre gidin
-cd whatsapp-sohbet-goruntuleyici
-
-# Bağımlılıkları yükleyin
-npm install
-
-# Projeyi başlatın
-npm run dev
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

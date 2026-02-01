@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Message, ChatParticipant } from '../types';
 import ChatBubble from './ChatBubble';
-import { Search, MoreVertical, Paperclip, Smile, Mic, ArrowLeft, Phone, Video, X, Calendar, CalendarDays } from 'lucide-react';
+import { Search, MoreVertical, Paperclip, Smile, Mic, ArrowLeft, Phone, Video, X, Calendar, CalendarDays, ChevronUp, ChevronDown } from 'lucide-react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import JSZip from 'jszip';
 import { DayPicker, DateRange } from 'react-day-picker';
@@ -21,6 +21,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  
+  // Search Navigation State
+  const [searchMatches, setSearchMatches] = useState<number[]>([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(-1);
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -44,11 +48,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
       };
   }, [messages]);
 
-  // Filter messages based on Search AND Date Range
-  const filteredMessages = useMemo(() => {
+  // 1. Filter messages based on Date Range ONLY (Search no longer hides messages)
+  const displayedMessages = useMemo(() => {
     let filtered = messages;
 
-    // 1. Date Filter
+    // Date Filter
     if (dateRange?.from) {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
@@ -56,24 +60,73 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
         filtered = filtered.filter(m => m.timestamp >= from && m.timestamp <= to);
     }
 
-    // 2. Text Search Filter
-    if (searchTerm) {
-        const lowerTerm = searchTerm.toLowerCase();
-        filtered = filtered.filter(m => 
-            m.content && m.content.toLowerCase().includes(lowerTerm)
-        );
+    return filtered;
+  }, [messages, dateRange]);
+
+  // 2. Calculate Search Matches within the Displayed Messages
+  useEffect(() => {
+    if (!searchTerm || searchTerm.length < 2) {
+        setSearchMatches([]);
+        setCurrentMatchIndex(-1);
+        return;
     }
 
-    return filtered;
-  }, [messages, searchTerm, dateRange]);
+    const lowerTerm = searchTerm.toLowerCase();
+    const matches: number[] = [];
+    
+    displayedMessages.forEach((msg, index) => {
+        if (msg.content && msg.content.toLowerCase().includes(lowerTerm)) {
+            matches.push(index);
+        }
+    });
+
+    setSearchMatches(matches);
+    
+    // If matches found, jump to the first one (or last one depending on preference, usually last/newest in chat context, but first is better for 'find')
+    if (matches.length > 0) {
+        // Find the closest match to current view or just start from the top? 
+        // Let's start from the first match found (oldest message in view)
+        setCurrentMatchIndex(0);
+    } else {
+        setCurrentMatchIndex(-1);
+    }
+
+  }, [searchTerm, displayedMessages]);
+
+  // 3. Scroll to the current match when index changes
+  useEffect(() => {
+      if (currentMatchIndex >= 0 && searchMatches.length > 0) {
+          const targetMessageIndex = searchMatches[currentMatchIndex];
+          
+          virtuosoRef.current?.scrollToIndex({
+              index: targetMessageIndex,
+              align: 'center', // Put the message in the middle of the screen
+              behavior: 'auto'
+          });
+      }
+  }, [currentMatchIndex, searchMatches]);
+
+  const handleNextMatch = () => {
+      if (searchMatches.length === 0) return;
+      setCurrentMatchIndex(prev => (prev + 1) % searchMatches.length);
+  };
+
+  const handlePrevMatch = () => {
+      if (searchMatches.length === 0) return;
+      setCurrentMatchIndex(prev => (prev - 1 + searchMatches.length) % searchMatches.length);
+  };
+
+  const handleSearchClose = () => {
+      setSearchTerm('');
+      setIsSearchOpen(false);
+      setSearchMatches([]);
+      setCurrentMatchIndex(-1);
+  };
 
   // Handle outside click to close calendar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // On mobile (modal mode), we handle backdrop click separately.
-      // This is mainly for desktop popover mode.
       if (calendarContainerRef.current && !calendarContainerRef.current.contains(event.target as Node)) {
-         // Only close if it's not the modal backdrop
          if (window.innerWidth >= 768) {
             setIsCalendarOpen(false);
          }
@@ -97,7 +150,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
 
   const handleDaySelect = (range: DateRange | undefined) => {
       setDateRange(range);
-      // Don't close immediately to allow range selection
   };
 
   const clearDateFilter = () => {
@@ -141,8 +193,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
 
                 <div className="flex items-center gap-1 sm:gap-2 text-[#54656f]">
                         
-                        {/* Search Bar */}
-                        <div className={`flex items-center bg-white rounded-full transition-all duration-300 shadow-sm z-30 ${isSearchOpen ? 'absolute right-4 w-64 px-3 py-1.5' : 'w-10 h-10 justify-center hover:bg-gray-200 cursor-pointer relative'}`}>
+                        {/* Search Bar - Expanded with Navigation */}
+                        <div className={`flex items-center bg-white rounded-full transition-all duration-300 shadow-sm z-30 ${isSearchOpen ? 'absolute right-2 left-2 md:right-4 md:left-auto md:w-96 px-3 py-1.5' : 'w-10 h-10 justify-center hover:bg-gray-200 cursor-pointer relative'}`}>
                             {isSearchOpen ? (
                                 <>
                                     <Search size={18} className="text-gray-500 shrink-0" />
@@ -153,8 +205,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                                         placeholder="Ara..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleNextMatch();
+                                        }}
                                     />
-                                    <button onClick={() => {setSearchTerm(''); setIsSearchOpen(false)}} className="ml-1 text-gray-500 hover:text-red-500">
+                                    
+                                    {/* Match Navigation Controls */}
+                                    {searchTerm && (
+                                        <div className="flex items-center gap-1 border-r border-gray-300 pr-2 mr-2">
+                                            <span className="text-xs text-gray-400 whitespace-nowrap min-w-[30px] text-center">
+                                                {searchMatches.length > 0 ? `${currentMatchIndex + 1}/${searchMatches.length}` : '0/0'}
+                                            </span>
+                                            <button 
+                                                onClick={handlePrevMatch} 
+                                                disabled={searchMatches.length === 0}
+                                                className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                                            >
+                                                <ChevronUp size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={handleNextMatch} 
+                                                disabled={searchMatches.length === 0}
+                                                className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                                            >
+                                                <ChevronDown size={18} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <button onClick={handleSearchClose} className="ml-1 text-gray-500 hover:text-red-500">
                                         <X size={16} />
                                     </button>
                                 </>
@@ -183,7 +262,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                                 ></div>
                             )}
 
-                            {/* Calendar Container: Modal on Mobile, Popover on Desktop */}
+                            {/* Calendar Container */}
                             {isCalendarOpen && (
                                 <div className={`
                                     bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-50 border border-gray-100 
@@ -254,8 +333,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
             </div>
 
             {/* Virtualized Messages Area */}
-            <div className="flex-1 z-10 w-full relative">
-                {filteredMessages.length === 0 ? (
+            <div className="flex-1 z-10 w-full relative min-h-0">
+                {displayedMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white/50 backdrop-blur-sm m-4 rounded-xl">
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
                             <Search size={32} />
@@ -264,7 +343,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                         <p className="text-[#54656f] text-sm max-w-xs">
                             {dateRange 
                                 ? "Seçilen tarih aralığında herhangi bir mesaj bulunmuyor." 
-                                : searchTerm ? `"${searchTerm}" aramasıyla eşleşen mesaj yok.` : "Sohbet geçmişi boş."}
+                                : "Sohbet geçmişi boş."}
                         </p>
                         {dateRange && (
                             <button 
@@ -278,15 +357,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                 ) : (
                     <Virtuoso
                         ref={virtuosoRef}
-                        data={filteredMessages}
-                        initialTopMostItemIndex={filteredMessages.length - 1} // Start at bottom
-                        followOutput="auto" 
+                        data={displayedMessages}
+                        initialTopMostItemIndex={displayedMessages.length - 1} // Start at bottom
                         alignToBottom 
                         className="custom-scrollbar"
                         style={{ height: '100%', width: '100%' }}
                         itemContent={(index, msg) => {
                              // Determine tail logic
-                             const prevMsg = filteredMessages[index - 1];
+                             const prevMsg = displayedMessages[index - 1];
                              const isFirstInSequence = !prevMsg || prevMsg.sender !== msg.sender || prevMsg.isSystem;
                              
                              // Date Separator
