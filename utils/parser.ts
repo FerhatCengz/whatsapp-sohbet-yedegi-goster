@@ -24,10 +24,11 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
   const sendersSet = new Set<string>();
 
   // [Date Time] Sender: Message
-  const msgStartRegex = /^\[(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(ÖÖ|ÖS|AM|PM)?\s*(\d{1,2}:\d{2}:\d{2})\]\s+(.*?):\s+(.*)/;
+  // Updated Regex: Supports both "/" (6/27/24) and "." (28.11.2024) separators
+  const msgStartRegex = /^\[(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s+(ÖÖ|ÖS|AM|PM)?\s*(\d{1,2}:\d{2}:\d{2})\]\s+(.*?):\s+(.*)/;
   
-  // Format 1: filename (file attached) or (dosya eklendi)
-  // Format 2: <filename eklendi> (Common in Turkish Android exports)
+  // Format 1: filename (file attached) or (dosya eklendi) -> iOS/Old
+  // Format 2: <filename eklendi> -> Android TR
   // We capture the filename.
   const attachmentRegexOld = /([a-zA-Z0-9_\-\.\s]+\.(jpg|jpeg|png|mp4|opus|mp3|pdf|webp|mov))\s+(\(file attached\)|\(dosya eklendi\))/i;
   const attachmentRegexNew = /<([a-zA-Z0-9_\-\.\s]+\.(jpg|jpeg|png|mp4|opus|mp3|pdf|webp|mov))\s+eklendi>/i;
@@ -47,8 +48,18 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
       const senderName = senderNameRaw.trim();
       sendersSet.add(senderName);
 
-      // Fast Date Parsing
-      const [month, day, year] = dateStr.split('/').map(Number);
+      // --- Date Parsing Logic Update ---
+      let day, month, year;
+      
+      if (dateStr.includes('.')) {
+          // Turkish/European Format: DD.MM.YYYY (e.g., 28.11.2024)
+          [day, month, year] = dateStr.split('.').map(Number);
+      } else {
+          // US Format: MM/DD/YYYY (e.g., 6/27/24)
+          [month, day, year] = dateStr.split('/').map(Number);
+      }
+
+      // Time Parsing
       const [hoursStr, minutesStr, secondsStr] = timeStr.split(':');
       let hours = parseInt(hoursStr, 10);
       const minutes = parseInt(minutesStr, 10);
@@ -87,7 +98,7 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
       if (attachmentFileName) {
           const ext = attachmentFileName.split('.').pop()?.toLowerCase();
           if (['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) type = 'image';
-          else if (['opus', 'mp3', 'wav', 'aac'].includes(ext || '')) type = 'audio';
+          else if (['opus', 'mp3', 'wav', 'aac', 'm4a'].includes(ext || '')) type = 'audio';
           else if (['mp4', 'mov'].includes(ext || '')) type = 'video';
       }
 
@@ -98,7 +109,7 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
         rawDate: `${dateStr} ${hours}:${minutesStr}`,
         timestamp,
         sender: senderName,
-        content: contentStart, // Keep raw content, UI will clean it if needed
+        content: contentStart, 
         isMe,
         isSystem: type === 'system',
         type,
@@ -106,7 +117,6 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
       };
 
       if (!isMe && type !== 'system') {
-         // Optimization: Don't update this map on every message if not needed for UI list
          if (!participantsMap.has(senderName)) {
              participantsMap.set(senderName, {
                  name: senderName,
@@ -115,7 +125,6 @@ export const parseChatFile = (text: string, zipFile: JSZip | null, myName: strin
                  avatarColor: getRandomColor(senderName)
              });
          } else {
-             // Just update last message info
              const p = participantsMap.get(senderName)!;
              p.lastMessage = contentStart;
              p.lastMessageDate = timestamp;
