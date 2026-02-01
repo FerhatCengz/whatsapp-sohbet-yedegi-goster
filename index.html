@@ -7,6 +7,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/react-day-picker@8.10.0/dist/style.css">
+    
+    <!-- Error Suppression for ResizeObserver -->
+    <script>
+      // ResizeObserver loop errors are often benign in React apps using virtualization.
+      // We suppress them to keep the console clean and prevent dev overlays.
+      const _originalConsoleError = console.error;
+      console.error = function(...args) {
+        if (typeof args[0] === 'string' && /ResizeObserver loop/.test(args[0])) {
+          return;
+        }
+        _originalConsoleError.apply(console, args);
+      };
+
+      window.addEventListener('error', function(event) {
+        if (event.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+            event.message === 'ResizeObserver loop limit exceeded') {
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
+
     <style>
       body {
         font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
