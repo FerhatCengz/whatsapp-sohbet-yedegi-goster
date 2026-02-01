@@ -70,8 +70,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
   // Handle outside click to close calendar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // On mobile (modal mode), we handle backdrop click separately.
+      // This is mainly for desktop popover mode.
       if (calendarContainerRef.current && !calendarContainerRef.current.contains(event.target as Node)) {
-        setIsCalendarOpen(false);
+         // Only close if it's not the modal backdrop
+         if (window.innerWidth >= 768) {
+            setIsCalendarOpen(false);
+         }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -160,7 +165,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                             )}
                         </div>
 
-                        {/* Calendar Button & Popover */}
+                        {/* Calendar Button & Popover/Modal */}
                         <div className="relative" ref={calendarContainerRef}>
                             <button 
                                 onClick={() => setIsCalendarOpen(!isCalendarOpen)} 
@@ -170,11 +175,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                                 <CalendarDays size={20} strokeWidth={isCalendarOpen || dateRange ? 2.5 : 2} />
                             </button>
 
-                            {/* Enhanced Calendar Popover */}
+                            {/* Mobile Backdrop */}
                             {isCalendarOpen && (
-                                <div className="absolute top-14 right-[-10px] md:right-0 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-5 z-50 border border-gray-100 animate-in fade-in zoom-in-95 duration-100 origin-top-right min-w-[340px]">
+                                <div 
+                                    className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+                                    onClick={() => setIsCalendarOpen(false)}
+                                ></div>
+                            )}
+
+                            {/* Calendar Container: Modal on Mobile, Popover on Desktop */}
+                            {isCalendarOpen && (
+                                <div className={`
+                                    bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-50 border border-gray-100 
+                                    animate-in fade-in zoom-in-95 duration-150
+                                    fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[350px]
+                                    md:absolute md:top-14 md:right-0 md:left-auto md:translate-x-0 md:translate-y-0 md:w-auto md:min-w-[340px] md:origin-top-right
+                                `}>
                                     
-                                    {/* Popover Header */}
+                                    {/* Header */}
                                     <div className="flex items-center justify-between mb-2 pb-3 border-b border-gray-100">
                                         <div className="flex items-center gap-2 text-[#00a884]">
                                             <CalendarDays size={20} />
@@ -182,38 +200,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, participants, c
                                         </div>
                                         <button 
                                             onClick={() => setIsCalendarOpen(false)}
-                                            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full"
+                                            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-full bg-gray-50 md:bg-transparent"
                                         >
                                             <X size={18} />
                                         </button>
                                     </div>
 
-                                    <DayPicker
-                                        mode="range"
-                                        selected={dateRange}
-                                        onSelect={handleDaySelect}
-                                        locale={tr}
-                                        fromDate={minDate}
-                                        toDate={maxDate}
-                                        disabled={{ after: maxDate, before: minDate }}
-                                        captionLayout="dropdown"
-                                        showOutsideDays={false}
-                                    />
+                                    <div className="flex justify-center">
+                                        <DayPicker
+                                            mode="range"
+                                            selected={dateRange}
+                                            onSelect={handleDaySelect}
+                                            locale={tr}
+                                            fromDate={minDate}
+                                            toDate={maxDate}
+                                            disabled={{ after: maxDate, before: minDate }}
+                                            captionLayout="dropdown"
+                                            showOutsideDays={false}
+                                        />
+                                    </div>
                                     
-                                    {/* Popover Footer */}
-                                    <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-2">
+                                    {/* Footer */}
+                                    <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
                                         <div className="text-xs text-gray-500 text-center">
-                                            {format(minDate, 'd MMM yyyy', {locale: tr})} ile {format(maxDate, 'd MMM yyyy', {locale: tr})} arası kayıtlı.
+                                            {format(minDate, 'd MMM yyyy', {locale: tr})} - {format(maxDate, 'd MMM yyyy', {locale: tr})}
                                         </div>
-                                        {dateRange && (
+                                        <div className="flex gap-2">
+                                            {dateRange && (
+                                                <button 
+                                                    onClick={clearDateFilter}
+                                                    className="flex-1 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
+                                                >
+                                                    <X size={16} />
+                                                    Temizle
+                                                </button>
+                                            )}
                                             <button 
-                                                onClick={clearDateFilter}
-                                                className="w-full py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
+                                                onClick={() => setIsCalendarOpen(false)}
+                                                className="flex-1 py-2.5 bg-[#00a884] text-white rounded-lg hover:bg-[#008f6f] transition-colors font-semibold text-sm"
                                             >
-                                                <X size={16} />
-                                                Filtreyi Temizle
+                                                Tamam
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -2,7 +2,7 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>WhatsApp Chat Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
@@ -55,11 +55,31 @@
 
       /* --- Modern DayPicker Customization --- */
       .rdp {
-        --rdp-cell-size: 46px; /* Larger click targets */
+        --rdp-cell-size: 46px; /* Desktop size */
         --rdp-accent-color: #00a884;
         --rdp-background-color: #e7fce3;
         --rdp-outline: 2px solid var(--rdp-accent-color);
         margin: 0;
+      }
+
+      /* Mobile Adjustments for DayPicker */
+      @media (max-width: 480px) {
+        .rdp {
+          --rdp-cell-size: 38px; /* Smaller cells for mobile to fit 320px screens */
+        }
+        .rdp-caption_label {
+          font-size: 1rem;
+        }
+        .rdp-nav_button {
+          width: 28px;
+          height: 28px;
+        }
+        .rdp-head_cell {
+          font-size: 0.8rem;
+        }
+        .rdp-day {
+           font-size: 0.9rem;
+        }
       }
       
       /* Month/Year Caption */
